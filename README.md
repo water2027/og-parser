@@ -1,25 +1,76 @@
-# Cloudflare Workers OpenAPI 3.1
+# Open Graph Parser Worker
 
-This is a Cloudflare Worker with OpenAPI 3.1 using [chanfana](https://github.com/cloudflare/chanfana) and [Hono](https://github.com/honojs/hono).
+This is a Cloudflare Worker that fetches a URL and parses Open Graph (OG) metadata, returning it as JSON. It uses [chanfana](https://github.com/cloudflare/chanfana) for OpenAPI documentation and validation, and [cheerio](https://cheerio.js.org/) for HTML parsing.
 
-This is an example project made to be used as a quick start into building OpenAPI compliant Workers that generates the
-`openapi.json` schema automatically from code and validates the incoming request to the defined parameters or request body.
+## Features
 
-## Get started
+-   **OpenAPI 3.1 Compliant**: Automatically generates `openapi.json` and Swagger UI.
+-   **Validation**: Uses Zod to validate input URLs.
+-   **Parsing**: Extracts `og:title`, `og:description`, `og:image`, `og:url`, `og:site_name`, and `og:type`, falling back to standard HTML tags where appropriate.
+-   **Intelligent Caching**: Responses are cached for 1 hour (`Cache-Control: public, max-age=3600`) to improve performance and reduce upstream load.
+-   **Robust Error Handling**: Handles timeouts (10s), invalid URLs, and upstream server errors with appropriate HTTP status codes (400, 502, 504).
+-   **CORS Enabled**: Configured to allow cross-origin requests from any domain (`Access-Control-Allow-Origin: *`) by default.
 
-1. Sign up for [Cloudflare Workers](https://workers.dev). The free tier is more than enough for most use cases.
-2. Clone this project and install dependencies with `npm install`
-3. Run `wrangler login` to login to your Cloudflare account in wrangler
-4. Run `wrangler deploy` to publish the API to Cloudflare Workers
+## API Usage
 
-## Project structure
+### Parse a URL
 
-1. Your main router is defined in `src/index.ts`.
-2. Each endpoint has its own file in `src/endpoints/`.
-3. For more information read the [chanfana documentation](https://chanfana.pages.dev/) and [Hono documentation](https://hono.dev/docs).
+**Endpoint:** `GET /api/parse`
 
-## Development
+**Parameters:**
+-   `url` (query parameter, required): The URL to fetch and parse.
 
-1. Run `wrangler dev` to start a local instance of the API.
-2. Open `http://localhost:8787/` in your browser to see the Swagger interface where you can try the endpoints.
-3. Changes made in the `src/` folder will automatically trigger the server to reload, you only need to refresh the Swagger interface.
+**Example Request:**
+
+```bash
+curl "http://localhost:8787/api/parse?url=https://github.com"
+```
+
+**Example Success Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "title": "GitHub: Let's build from here",
+    "description": "GitHub is where over 100 million developers shape the future of software...",
+    "image": "https://github.githubassets.com/images/modules/site/social-cards/github-social.png",
+    "url": "https://github.com",
+    "site_name": "GitHub",
+    "type": "object"
+  }
+}
+```
+
+**Example Error Response (502 Bad Gateway):**
+
+```json
+{
+  "success": false,
+  "error": "Upstream error: 404 Not Found"
+}
+```
+
+## Get Started
+
+1.  **Install dependencies**:
+    ```bash
+    npm install
+    # or
+    pnpm install
+    ```
+
+2.  **Run locally**:
+    ```bash
+    npm run dev
+    # or
+    pnpm dev
+    ```
+    Open [http://localhost:8787/](http://localhost:8787/) to view the Swagger UI.
+
+3.  **Deploy**:
+    ```bash
+    npm run deploy
+    # or
+    pnpm deploy
+    ```
